@@ -4,33 +4,49 @@ const app = express();
 const http = require("http");
 const socketIo = require("socket.io");
 const axios = require("axios");
+const SECRET_TOKEN = process.env.SECRET_TOKEN;
+const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
 const cors = require("cors");
 
 const server = http.createServer(app);
-const io = socketIo(server);
-const SECRET_TOKEN = process.env.SECRET_TOKEN;
-const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
 app.use(express.json());
 app.use(cors());
 
-app.listen(process.env.PORT, () => {
+server.listen(process.env.PORT, () => {
   console.log("Server running on port " + process.env.PORT);
 });
 
 // Socket.io connection handling
 io.on("connection", (socket) => {
-  console.log("Client connected");
+  console.log("User Connected", socket.id);
 
-  // Disconnect event
+  socket.on("message", (data) => {
+    console.log(data);
+    io.emit("receive-message", `${data}`);
+  });
+
+  socket.on("join-room", (room) => {
+    socket.join(room);
+    console.log(`User joined room ${room}`);
+  });
+
   socket.on("disconnect", () => {
-    console.log("Client disconnected");
+    console.log("User Disconnected", socket.id);
   });
 });
 
 app.get("/", (req, res) => {
   res.status(200).json("Hello This is webhook setup for whatsapp.");
 });
+
 // to verify the callback url from dashboard side - cloud api side
 app.get("/webhook", (req, res) => {
   let mode = req.query["hub.mode"];
@@ -49,7 +65,6 @@ app.get("/webhook", (req, res) => {
 
 app.post("/webhook", (req, res) => {
   let body_param = req.body;
-  console.log(JSON.stringify(body_param, null, 2));
 
   if (body_param.object) {
     if (
@@ -64,7 +79,7 @@ app.post("/webhook", (req, res) => {
       let msg_body = body_param.entry[0].changes[0].value.messages[0].text.body;
 
       // Emit message via Socket.io
-      io.emit("message", { from, msg_body });
+      io.emit("receive-message", { from, msg_body });
 
       axios({
         method: "POST",
@@ -84,9 +99,9 @@ app.post("/webhook", (req, res) => {
           "Content-Type": "application/json",
         },
       });
-      res.sendStatus(200);
+      return res.status(200).json({ status: "ok" });
     } else {
-      res.sendStatus(404);
+      return res.status(400).json({ status: "Webhook error" });
     }
   }
 });
