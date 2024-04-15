@@ -53,8 +53,13 @@ app.get("/msg", (req, res) => {
   res.status(200).json("Hello This is webhook setup for whatsapp.");
 });
 
-// to verify the callback url from dashboard side - cloud api side
-// ...existing code...
+function getSecretToken(company_id) {
+  if (company_id === "1") {
+    return "mysupersecretkey";
+  } else if (company_id === "2") {
+    return "mysupersecretkey2";
+  }
+}
 
 // to verify the callback url from dashboard side - cloud api side
 app.get("/:company_id/webhook", (req, res) => {
@@ -64,8 +69,7 @@ app.get("/:company_id/webhook", (req, res) => {
   let company_id = req.params.company_id;
 
   // Use the company_id to fetch the corresponding SECRET_TOKEN from your database
-  // let SECRET_TOKEN = getSecretToken(company_id);
-  let SECRET_TOKEN = company_id;
+  let SECRET_TOKEN = getSecretToken(company_id);
 
   if (mode && token) {
     if (mode === "subscribe" && token === SECRET_TOKEN) {
