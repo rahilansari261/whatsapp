@@ -3,9 +3,7 @@ const express = require("express");
 const app = express();
 const http = require("http");
 const socketIo = require("socket.io");
-const axios = require("axios");
-const SECRET_TOKEN = process.env.SECRET_TOKEN;
-const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
+
 const cors = require("cors");
 
 const server = http.createServer(app);
@@ -42,9 +40,11 @@ io.on("connection", (socket) => {
     console.log("User Disconnected", socket.id);
   });
 });
+
 app.get("/", (req, res) => {
   res.status(200).json("Hello This is webhook setup for whatsapp.");
 });
+
 app.get("/msg", (req, res) => {
   io.emit("receive-message", {
     from: "7742148739",
@@ -69,7 +69,7 @@ app.get("/:company_id/webhook", (req, res) => {
   let company_id = req.params.company_id;
 
   // Use the company_id to fetch the corresponding SECRET_TOKEN from your database
-  let SECRET_TOKEN = getSecretToken(company_id);
+  const SECRET_TOKEN = getSecretToken(company_id);
 
   if (mode && token) {
     if (mode === "subscribe" && token === SECRET_TOKEN) {
