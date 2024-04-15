@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --watch index.js"
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "author": "Rahil A.",
   "license": "ISC",

@@ -62,7 +62,7 @@ function getSecretToken(company_id) {
 }
 
 // to verify the callback url from dashboard side - cloud api side
-app.get("/:company_id/webhook", (req, res) => {
+app.get("/webhook/:company_id", (req, res) => {
   let mode = req.query["hub.mode"];
   let challenge = req.query["hub.challenge"];
   let token = req.query["hub.verify_token"];
@@ -81,7 +81,7 @@ app.get("/:company_id/webhook", (req, res) => {
   }
 });
 
-app.post("/:company_id/webhook", (req, res) => {
+app.post("/webhook/:company_id", (req, res) => {
   let body_param = req.body;
   let company_id = req.params.company_id;
 
