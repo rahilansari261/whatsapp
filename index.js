@@ -30,7 +30,7 @@ io.on("connection", (socket) => {
 
   socket.on("message", (data) => {
     console.log(data);
-    io.emit("receive-message", `${data}`);
+    io.emit("receive-message", data);
   });
 
   socket.on("join-room", (room) => {
@@ -42,20 +42,34 @@ io.on("connection", (socket) => {
     console.log("User Disconnected", socket.id);
   });
 });
-
 app.get("/", (req, res) => {
+  res.status(200).json("Hello This is webhook setup for whatsapp.");
+});
+app.get("/msg", (req, res) => {
+  io.emit("receive-message", {
+    from: "7742148739",
+    msg_body: "hello from Glitch Server!!",
+  });
   res.status(200).json("Hello This is webhook setup for whatsapp.");
 });
 
 // to verify the callback url from dashboard side - cloud api side
-app.get("/webhook", (req, res) => {
+// ...existing code...
+
+// to verify the callback url from dashboard side - cloud api side
+app.get("/:company_id/webhook", (req, res) => {
   let mode = req.query["hub.mode"];
   let challenge = req.query["hub.challenge"];
   let token = req.query["hub.verify_token"];
+  let company_id = req.params.company_id;
+
+  // Use the company_id to fetch the corresponding SECRET_TOKEN from your database
+  // let SECRET_TOKEN = getSecretToken(company_id);
+  let SECRET_TOKEN = company_id;
 
   if (mode && token) {
     if (mode === "subscribe" && token === SECRET_TOKEN) {
-      console.log("WEBHOOK_VERIFIED");
+      console.log("WEBHOOK_VERIFIED for company: " + company_id);
       res.status(200).send(challenge);
     } else {
       res.status(403);
@@ -63,8 +77,11 @@ app.get("/webhook", (req, res) => {
   }
 });
 
-app.post("/webhook", (req, res) => {
+app.post("/:company_id/webhook", (req, res) => {
   let body_param = req.body;
+  let company_id = req.params.company_id;
+
+  // Use the company_id to handle messages for the specific company
 
   if (body_param.object) {
     if (
@@ -79,26 +96,8 @@ app.post("/webhook", (req, res) => {
       let msg_body = body_param.entry[0].changes[0].value.messages[0].text.body;
 
       // Emit message via Socket.io
-      io.emit("receive-message", { from, msg_body });
+      io.emit("receive-message", { from, msg_body, company_id });
 
-      axios({
-        method: "POST",
-        url:
-          "https://graph.facebook.com/v16.0/" +
-          phone_no_id +
-          "/message?access_token=" +
-          PAGE_ACCESS_TOKEN,
-        data: {
-          messaging_product: "whatsapp",
-          to: from,
-          text: {
-            body: msg_body,
-          },
-        },
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
       return res.status(200).json({ status: "ok" });
     } else {
       return res.status(400).json({ status: "Webhook error" });
